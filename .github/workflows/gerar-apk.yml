@@ -1,0 +1,42 @@
+name: Gerar APK
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extrair projeto
+        run: unzip -o NaoEsquece-app.zip -d projeto
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      - name: Compilar
+        working-directory: projeto
+        run: gradle assembleRelease --no-daemon --stacktrace
+
+      - name: Renomear
+        run: cp projeto/app/build/outputs/apk/release/app-release.apk NaoEsquece.apk
+
+      - name: Publicar para download
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.run_number }}
+          name: Nao Esquece - versao ${{ github.run_number }}
+          body: Baixe o arquivo NaoEsquece.apk abaixo e abra no celular para instalar.
+          files: NaoEsquece.apk
+          make_latest: true
