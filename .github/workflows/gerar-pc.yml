@@ -1,0 +1,41 @@
+name: Gerar PC
+
+on:
+  push:
+    paths:
+      - 'NaoEsquece-app.zip'
+      - '.github/workflows/gerar-pc.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  pc:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extrair projeto
+        shell: pwsh
+        run: Expand-Archive -Path NaoEsquece-app.zip -DestinationPath projeto -Force
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Compilar
+        run: dotnet build projeto/pc/NaoEsquecePC.csproj -c Release -o saida
+
+      - name: Renomear
+        shell: pwsh
+        run: Copy-Item saida/NaoEsquece.exe NaoEsquece-PC.exe
+
+      - name: Publicar para download
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: pc-v${{ github.run_number }}
+          name: Nao Esquece PC (Windows) - versao ${{ github.run_number }}
+          body: Baixe NaoEsquece-PC.exe e abra no computador. Nao precisa instalar.
+          files: NaoEsquece-PC.exe
+          make_latest: false
